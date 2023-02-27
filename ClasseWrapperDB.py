@@ -1,7 +1,7 @@
 #classe wrapper
-#i più ci sono funzioni di connessione e di disconnessione
-#le variabili di istanza sono le 4 variabili per la connessione
-#invece la connessione è una variabile di classe 
+#funzioni di connetti e di disconnetti + varie
+#le variabili di istanza sono le 4 variabili per la connetti
+#invece la connetti è una variabile di classe 
 
 #importo il modulo 
 import pymssql
@@ -19,264 +19,126 @@ class WrapperDB:
         self._database=database
         
         
-    def connessione(self):
-	
+    def connetti(self):
+        #connessione
         try:
             WrapperDB.conn = pymssql.connect(server = self._server, user = self._user, \
                         password = self._password, database = self._database)
-            print("\nConnessione effettuata DB CRD2122!\n")
+            #print(f"\nConnessione effettuata! (DB: {self._database})\n")
             return WrapperDB.conn	
 
         except:
-            print("\nConnessione NON riuscita DB CRD2122!\n")
+            print(f"\nConnessione NON riuscita! (DB: {self._database})\n")
             return 0
         
             
-    def disconnessione(self, co):
-	
+    def disconnetti(self, co):
+        #disconnessione	
         try:
             co.close()
-            print("\nCHIUSURA Connessione effettuata DB CRD2122!\n")
+            #print(f"\nCHIUSURA connessione! (DB: {self._database})\n")
             
         except:
-            print("\nCHIUSURA Connessione NON riuscita DB CRD2122!\n")
+            print(f"\nCHIUSURA connessione NON riuscita! (DB: {self._database})\n")
             return 0
         
 
-    def visua(self):
-        c = self.connessione()
+    def elencoPost(self, as_dict = False):
+        #restituisce una lista di tuple se as_dict = False
+        #altrimenti restituisce una lista di coppie chiave/valore (dictionary)
+        conn = self.connetti()
         lista = []
         try:
-            cur = c.cursor()
-            istru = " select * from ACG_Persons "
-            cur.execute(istru)
+            cur = conn.cursor(as_dict = as_dict)
+            sql = "SELECT Id, Autore, Testo, [Like] FROM PC_FB_Post ORDER BY [Like] DESC"
+            cur.execute(sql)
             lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
         except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
+            err = "Houston abbiamo un problema..."
+            print(f"[elencoPost] {err}")
+        self.disconnetti(conn)
         return lista
 
-    def visuaMD(self):
-        # UGUALE A visua, MA con lista di righe-dizionario, anziche 
-        #	lista righe-tuple (CURSORE CREATO CON as_dict = True)
-        c = self.connessione()
-        lista = []
-        try:
-            cur = c.cursor(as_dict = True)
-            istru = " select * from ACG_Persons "
-            cur.execute(istru)
-            lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
-        except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
     
-    def visuaParametrica(self, eta):
-        c = self.connessione()
-        lista = []
+    def singoloPost(self, id):
+        #restituisce un singolo post
+        ret = {}
+        conn = self.connetti()
         try:
-            cur = c.cursor()
-            print("\nVisua cogn, nome e temperature delle pers. con una specifica eta' \n")
-            istru = """
-                select P.lastname , P.firstname , T.* 
-                from ACG_Temperature1 AS T 
-                join ACG_Persons AS P 
-                on P.ID = T.IDPerson 
-                WHERE P.age = %d   
+            cursore = conn.cursor(as_dict = True)
+            sql = f"""
+                SELECT Id, Autore, Testo, [Like] 
+                FROM PC_FB_Post 
+                WHERE id = {id}   
                 """
-            cur.execute(istru,(eta))
-            lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
+            cursore.execute(sql)
+            ret = cursore.fetchone()
         except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
+            err = "Houston abbiamo un problema..."
+            print(f"[singoloPost] {err}")
+        self.disconnetti(conn)
+        return ret    
+
     
-    def creaSchemaTabella(self):
-        # ACG_Temperature1(ID, dat, ora, minuti, temperatura, IDPerson)
-        ok = 1
-        c = self.connessione()
+    #def inserisciPost(self, autore, testo):
+    def inserisciPost(self, parametri):
+        #inserisce un nuovo post
+        #parametri: (autore, testo)
         try:
-            ope = """
-                IF NOT EXISTS ( 
-                    Select * 
-                     from sysobjects 
-                     where xtype = 'U' and name = 'ACG_Temperature1' 
-                    )
-                CREATE TABLE ACG_Temperature1 (
-                ID INT IDENTITY ( 1 , 1 ) NOT NULL , 
-                DATAT VARCHAR ( 10 ) NOT NULL ,
-                ORA INT NOT NULL ,
-                MINUTI INT NOT NULL ,
-                TEMPERATURA DECIMAL ( 5 , 2 ) NOT NULL ,
-                IDPerson INT NOT NULL ,
-                PRIMARY KEY ( ID ),
-                FOREIGN KEY ( IDPerson ) REFERENCES ACG_PERSONS ( ID )
-                     ON DELETE CASCADE 
-                )          
-                    """
-            cursore= c.cursor()
-            cursore.execute(ope)
-            c.commit()
-            print("\nCREATE effettuata (o la tabella esiste) su DB CRD2122!\n")
-        
-        except pymssql._mssql.MSSQLException as e:
-            print("A MSSQLDatabaseException has been caught.")
-            print('Number = ',e.number)
-            print('Severity = ',e.severity)
-            print('State = ',e.state)
-            print('Message = ',e.message)  
-            ok = 0
-            
-        """
-        except pymssql._mssql.MssqlDatabaseException as e:
-            print("A MSSQLDatabaseException has been caught.")
-            print('Number = ',e.number)
-            print('Severity = ',e.severity)
-            print('State = ',e.state)
-            print('Message = ',e.message)  
-            ok = 0
-        
-        except pymssql._mssql.MssqlDriverException:
-            print("A MSSQLDriverException has been caught.")
-            ok = 0
-        """
-        """
-        except pymssql.OperationalError as oe:
-            print("\nOperationalError in CREATE su DB CRD2122!\n")
-            print("number = " + str(oe.number) + "   severity=" + str(oe.severity) +"\n")
-            ok = 0
-        except pymssql.InternalError as ie:
-            print("\nInternalError in CREATE su DB CRD2122!\n")
-            ok = 0
-        except pymssql.ProgrammingInternalError as pe:
-            print("\nProgramminglError in CREATE su DB CRD2122!\n")
-            ok = 0
-        
-        except:
-            print("\nPROBLEMI CREATE effettuata su DB CRD2122\n")
-            ok = 0
-        """
-        self.disconnessione(c)
-        return ok
-        
-    
-    def inserimenti(self, parametro):
-        try:
-            # Connessione
-            #WrapperDB.conn = self.connetti() 
-            c = self.connessione() 
+            c = self.connetti() 
             cursore = c.cursor()
-            # NB %d anche per i DECIMAL!!!!!!!
-            
-            insertParametrica = " INSERT INTO ACG_Temperature1 VALUES (%s , %d , %d , %d, %d  ) "
-            print(parametro)
-            if  isinstance(parametro, tuple)  : # UNA sola riga
-                print("E' UNA TUPLA")
-                
-                cursore.execute(insertParametrica, parametro)
-                c.commit()
-                print("INSERIMENTO RIGA AVVENUTO", parametro)
-                self.disconnessione(c)
-                return "OK"
-            elif  isinstance(parametro, list)    : # piu righe
-                print("E' UNA LISTA")
-                cursore.executemany(insertParametrica, parametro)
-                c.commit()
-                print("INSERIMENTO RIGHE AVVENUTO", parametro)
-                self.disconnessione(c)
-                return "OK"
+            sql = "INSERT INTO PC_FB_Post (Autore, Testo) VALUES (%s , %s)"
+            cursore.execute(sql, parametri)
+            c.commit()
+            #print("INSERIMENTO POST AVVENUTO")
+            self.disconnetti(c)
+            return True            
+        except:
+            #print("\INSERIMENTO POST/i: Si sono verificati degli errori!")
+            self.disconnetti(c)
+            return False
+
+    def daiLikeAPost(self, id, is_like = True):
+        #mette like a post
+        #se is_like è False toglie un like
+        try:
+            c = self.connetti() 
+            cursore = c.cursor()
+            sql = "UPDATE PC_FB_Post SET [Like] = "
+            if is_like == True: 
+                sql += "[Like] + 1 "
             else:
-                # Disconnessione
-                self.disconnessione(c)
-                return "KO parametro"
+                sql += "[Like] - 1 "
+            sql += "WHERE id = %d"
+            cursore.execute(sql, id)
+            c.commit()
+            #print("LIKE A POST AVVENUTO")
+            self.disconnetti(c)
+            return True                        
+        except:
+            #print("\LIKE A POST/i: Si sono verificati degli errori!")
+            self.disconnetti(c)
+            return False
+
+
+    def eliminaPost(self, id):
+        #elimina un post
+        try:
+            c = self.connetti() 
+            cursore = c.cursor()
+            sql = "DELETE PC_FB_Post WHERE id = %d"
+            cursore.execute(sql, id)
+            c.commit()
+            #print("ELIMINA POST AVVENUTO")
+            self.disconnetti(c)
+            return True            
             
         except:
-            print("\nPROC Inserimento/i: PROBLEMA !")
-            self.disconnessione(c)
-            return "KO"
-        
-        
+            #print("\ELIMINA POST/i: Si sono verificati degli errori!")
+            self.disconnetti(c)
+            return False
+
     
-    def listaTabelle(self):
-        pass
-    
-    def listaTabelleUtente(self):
-        #
-        c = self.connessione()
-        lista = []
-        try:
-            cur = c.cursor(as_dict = True)
-            istru = """
-                select * from sysobjects  
-                WHERE xtype = 'U'  
-                """
-            cur.execute(istru)
-            lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
-        except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
-    
-    def listaNomiTabelleUtente(self):
-        #
-        c = self.connessione()
-        lista = []
-        try:
-            cur = c.cursor()
-            istru = """
-                select name from sysobjects  
-                WHERE xtype = 'U'  
-                order by name
-                """
-            cur.execute(istru)
-            lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
-        except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
-    
-    
-    def listaCampiDiSysobjects(self):
-        #
-        c = self.connessione()
-        lista = []
-        try:
-            cur = c.cursor(as_dict = True)
-            istru = " select * from sysobjects "
-            cur.execute(istru)
-            listarighe = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
-            for k in listarighe[0]:
-                lista.append(k)
-        except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
-    
-    
-    def listaTipiDiSysobjects(self):
-        #
-        c = self.connessione()
-        lista = []
-        try:
-            cur = c.cursor()
-            istru = """ 
-                select DISTINCT xtype from sysobjects  
-               
-                """
-            cur.execute(istru)
-            lista = cur.fetchall()
-            print("\nSELECT effettuata su DB CRD2122!\n")
-        except:
-            print("\nProblemi SELECT su DB CRD2122!\n")
-        self.disconnessione(c)
-        return lista
-    
-    
+
 
 	    
