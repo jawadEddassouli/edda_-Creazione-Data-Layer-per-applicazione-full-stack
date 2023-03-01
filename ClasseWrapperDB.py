@@ -50,7 +50,7 @@ class WrapperDB:
         lista = []
         try:
             cur = conn.cursor(as_dict = as_dict)
-            sql = "SELECT Id, Autore, Testo, [Like] FROM PC_FB_Post ORDER BY [Like] DESC"
+            sql = "SELECT Id, Autore, Testo, [Like] FROM EDDA_FB_Post ORDER BY [Like] DESC"
             cur.execute(sql)
             lista = cur.fetchall()
         except:
@@ -68,7 +68,7 @@ class WrapperDB:
             cursore = conn.cursor(as_dict = True)
             sql = f"""
                 SELECT Id, Autore, Testo, [Like] 
-                FROM PC_FB_Post 
+                FROM EDDA_FB_Post 
                 WHERE id = {id}   
                 """
             cursore.execute(sql)
@@ -87,7 +87,7 @@ class WrapperDB:
         try:
             c = self.connetti() 
             cursore = c.cursor()
-            sql = "INSERT INTO PC_FB_Post (Autore, Testo) VALUES (%s , %s)"
+            sql = "INSERT INTO EDDA_FB_Post (Autore, Testo) VALUES (%s , %s)"
             cursore.execute(sql, parametri)
             c.commit()
             #print("INSERIMENTO POST AVVENUTO")
@@ -104,7 +104,7 @@ class WrapperDB:
         try:
             c = self.connetti() 
             cursore = c.cursor()
-            sql = "UPDATE PC_FB_Post SET [Like] = "
+            sql = "UPDATE EDDA_FB_Post SET [Like] = "
             if is_like == True: 
                 sql += "[Like] + 1 "
             else:
@@ -126,7 +126,7 @@ class WrapperDB:
         try:
             c = self.connetti() 
             cursore = c.cursor()
-            sql = "DELETE PC_FB_Post WHERE id = %d"
+            sql = "DELETE EDDA_FB_Post WHERE id = %d"
             cursore.execute(sql, id)
             c.commit()
             #print("ELIMINA POST AVVENUTO")
@@ -138,7 +138,39 @@ class WrapperDB:
             self.disconnetti(c)
             return False
 
-    
+def aggiungiCommento(self, parametri):
+        #inserisce un nuovo commento
+        #parametri: (autore, testo)
+        try:
+            c = self.connetti() 
+            cursore = c.cursor()
+            sql = "INSERT INTO EDDA_FB_Commento (idPost, Autore, Testo) VALUES (%d, %s , %s)"
+            cursore.execute(sql, parametri)
+            c.commit()
+            #print("INSERIMENTO COMMENTO AVVENUTO")
+            self.disconnetti(c)
+            return True            
+        except:
+            #print("\INSERIMENTO COMMENTO/I: Si sono verificati degli errori!")
+            self.disconnetti(c)
+            return False
+
+def eliminaCommento(self, parametri):
+        #elimina un commento
+        try:
+            c = self.connetti() 
+            cursore = c.cursor()
+            sql = "DELETE EDDA_FB_Commento WHERE autore = %s AND testo = %s"
+            cursore.execute(sql, paramentri)
+            c.commit()
+            #print("ELIMINA COMMENTO AVVENUTO")
+            self.disconnetti(c)
+            return True            
+            
+        except:
+            #print("\ELIMINA COMMENTO/I: Si sono verificati degli errori!")
+            self.disconnetti(c)
+            return False
 
 
-	    
+

@@ -43,3 +43,12 @@ print("********************************")
 #print("Dopo:")
 #print(wrp.elencoPost(as_dict = True))
 #print("******************************")
+
+
+
+print()
+print("\n***** TEST aggiungiCommento *****")
+parametri = ("jawad", "!!!")
+wrp.inserisciPost(parametri)
+print(wrp.elencoPost(as_dict = True))
+print("********************************")
