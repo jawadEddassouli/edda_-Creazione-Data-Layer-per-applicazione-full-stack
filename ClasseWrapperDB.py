@@ -138,39 +138,54 @@ class WrapperDB:
             self.disconnetti(c)
             return False
 
-def aggiungiCommento(self, parametri):
-        #inserisce un nuovo commento
-        #parametri: (autore, testo)
-        try:
-            c = self.connetti() 
-            cursore = c.cursor()
-            sql = "INSERT INTO EDDA_FB_Commento (idPost, Autore, Testo) VALUES (%d, %s , %s)"
-            cursore.execute(sql, parametri)
-            c.commit()
-            #print("INSERIMENTO COMMENTO AVVENUTO")
-            self.disconnetti(c)
-            return True            
-        except:
-            #print("\INSERIMENTO COMMENTO/I: Si sono verificati degli errori!")
-            self.disconnetti(c)
-            return False
+    def aggiungiCommento(self, parametri):
+            #inserisce un nuovo commento
+            #parametri: (autore, testo)
+            try:
+                c = self.connetti() 
+                cursore = c.cursor()
+                sql = "INSERT INTO EDDA_FB_Commenti (idPost, Autore, Testo) VALUES (%d, %s , %s)"
+                cursore.execute(sql, parametri)
+                c.commit()
+                #print("INSERIMENTO COMMENTO AVVENUTO")
+                self.disconnetti(c)
+                return True            
+            except:
+                #print("\INSERIMENTO COMMENTO/I: Si sono verificati degli errori!")
+                self.disconnetti(c)
+                return False
 
-def eliminaCommento(self, parametri):
-        #elimina un commento
+    def elencoCommenti(self, as_dict = False):
+        #restituisce una lista di tuple se as_dict = False
+        #altrimenti restituisce una lista di coppie chiave/valore (dictionary)
+        conn = self.connetti()
+        lista = []
         try:
-            c = self.connetti() 
-            cursore = c.cursor()
-            sql = "DELETE EDDA_FB_Commento WHERE autore = %s AND testo = %s"
-            cursore.execute(sql, paramentri)
-            c.commit()
-            #print("ELIMINA COMMENTO AVVENUTO")
-            self.disconnetti(c)
-            return True            
-            
+            cur = conn.cursor(as_dict = as_dict)
+            sql = "SELECT IdPost, Autore, Testo FROM EDDA_FB_Commenti"
+            cur.execute(sql)
+            lista = cur.fetchall()
         except:
-            #print("\ELIMINA COMMENTO/I: Si sono verificati degli errori!")
-            self.disconnetti(c)
-            return False
+            err = "Houston abbiamo un problema..."
+            print(f"[elencoCommenti] {err}")
+        self.disconnetti(conn)
+        return lista
+
+    def eliminaCommento(self, id):
+            #elimina un commento
+            try:
+                c = self.connetti() 
+                cursore = c.cursor()
+                sql = "DELETE EDDA_FB_Commenti WHERE id = %d"
+                cursore.execute(sql, id)
+                c.commit()
+                #print("ELIMINA COMMENTO AVVENUTO")
+                self.disconnetti(c)
+                return True            
+            except:
+                #print("\ELIMINA COMMENTO/I: Si sono verificati degli errori!")
+                self.disconnetti(c)
+                return False
 
 
 
